@@ -12,6 +12,8 @@ The Frozen Lake environment is a playground for people to learn about RL algorit
 The Dark blue squares represent terminal states or equivalently holes, and the red squares represent the location of the gift (aka reward). All blocks that aren't light blue will have terminal states.    
                                                                                                                                          
 ## Quickstart
+**TLDR: See the testing.py file**  
+                                                                                                                                         
 To get started, we need to install the necessary pacakges jumanji and jaxlib since this repo is built on top of these pacakges. This can be done by following instructions on the links
                                                                                                                                
                                                                                                                                          
@@ -56,4 +58,4 @@ Visual.render(state.grid, elfpos)
 
 ```                                                                                                                                         
                                                                                                                                         
-**TLDR: See the testing.py file**          
+        

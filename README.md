@@ -15,9 +15,9 @@ The Dark blue squares represent terminal states or equivalently holes, and the r
 To get started, we need to install the necessary pacakges jumanji and jaxlib since this repo is built on top of these pacakges. This can be done by following instructions on the links
                                                                                                                                
                                                                                                                                          
-https://github.com/instadeepai/jumanji (Jumanji) \
+https://github.com/instadeepai/jumanji (Jumanji) 
 
-https://jax.readthedocs.io/en/latest/installation.html (Jax)\
+https://jax.readthedocs.io/en/latest/installation.html (Jax)
 
 **Be Careful when installing JAX on Windows, if done incorrectly, it can lead to BSOD problems!!**                                                         
 

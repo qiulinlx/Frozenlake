@@ -132,10 +132,9 @@ class Frozenlake(Environment[State]):
 
         goal_achieved = elf_position == state.goal_position
 
-        done = ~is_valid | goal_achieved 
+        done = ~is_valid | goal_achieved |  state.grid[elf_position.row, elf_position.col] != 0
 
-        if state.grid[elf_position]==-1:
-            done
+        #done = state.grid[elf_position.row, elf_position.col] == -1
 
 
         step_count = state.step_count + 1
@@ -149,10 +148,9 @@ class Frozenlake(Environment[State]):
         )
 
 
-        if elf_position== state.goal_position:
-            reward=1
-        else:
-            reward=0
+        
+        reward=1|goal_achieved
+
 
         observation = self._state_to_observation(next_state)
 
@@ -164,6 +162,7 @@ class Frozenlake(Environment[State]):
             observation,
         )
         return next_state, timestep
+    
     
     def observation_spec(self) -> specs.Spec[Observation]:
         """Returns the observation spec.

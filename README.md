@@ -1,6 +1,9 @@
-# Frozenlake In JAX using Jumanji API
+# Frozen lake Environment in JAX & Jumanji 
 
-This is an implementation of OpenAI gyms Frozen Lake using JAX and Jumanji. This is a simple gridworld where the agent must get to the goal while avoiding the holes.
+This is an implementation of OpenAI gyms Frozen Lake using JAX and Jumanji. OpenAIs Frozen Lake implementation has many functions, but it uses numpy whihc is quite a bit slower than jax. This package uses jax.numpy which is 86 times faster than numpy when GPU is available. This package is built using Jumanji, meaning that users can write any functions that they need and seamelessly implement them within this or any Jumanji environment. 
+
+
+This is a simple gridworld where the agent must get to the goal while avoiding the holes.
 
 <p align="center">
 <img width="256" height="250" src="https://user-images.githubusercontent.com/110373610/226537623-c6aafa7c-a7bf-4208-875c-e6645ffd1785.png">

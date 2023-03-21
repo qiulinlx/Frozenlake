@@ -7,12 +7,13 @@ The Frozen Lake environment is a playground for people to learn about RL algorit
 <p align="center">
 <img width="250" height="250" src="https://user-images.githubusercontent.com/110373610/226537623-c6aafa7c-a7bf-4208-875c-e6645ffd1785.png">
 <img width="250 height="250" src="https://user-images.githubusercontent.com/110373610/226541613-9707f3de-a707-40f5-a5b4-99303c8c410f.png">
-<\p>
+
 
 The Dark blue squares represent terminal states or equivalently holes, and the red squares represent the location of the gift (aka reward). All blocks that aren't light blue will have terminal states.    
                                                                                                                                          
 ## Quickstart
-To get started, we need to install jumanji and jaxlib. This can be done by following instructions on the links
+To get started, we need to install the necessary pacakges jumanji and jaxlib since this repo is built on top of these pacakges. This can be done by following instructions on the links
+                                                                                                                               
                                                                                                                                          
 https://github.com/instadeepai/jumanji (Jumanji) \                                                                                                         https://jax.readthedocs.io/en/latest/installation.html (Jax)\
 **Be Careful when installing JAX on Windows, if done incorrectly, it can lead to BSOD problems!!**                                                         
@@ -22,7 +23,7 @@ Once Jaxlib and Jumanji are running, we can clone this repo.
 ```ruby
 gh repo clone qiulinlx/Frozenlake
 ```
-The environment and the elf agent is initialsied and setup in the code below. 
+Now we can begin coding up the Frozen Lake environment easily. The environment and the elf agent is initialsied and setup in the code below. 
                                                                                                                                         
 ```ruby
 import Gridworld
@@ -41,3 +42,15 @@ action = env.action_spec().generate_value()
 env.step(state, action)
 
 ```
+                                                                                                                                         
+In order to visualise the environment and the position of the agent, we need to to import Visual as a pacakage and run the function render. The render function requires the package pygame to visualise. 
+
+```ruby
+import visual
+grid=state.grid
+elfpos=state.elf_position
+Visual.render(state.grid, elfpos)
+
+```                                                                                                                                         
+                                                                                                                                        
+**TLDR: See the testing.py file**          

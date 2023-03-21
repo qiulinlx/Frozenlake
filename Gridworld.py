@@ -29,17 +29,17 @@ HEIGHT = 90
 # This sets the margin between each cell
 MARGIN = 5
 
-metadata = {
-        "render_modes": ["human", "ansi", "rgb_array"],
-        "render_fps": 4,
-    }
-
-
 class Frozenlake(Environment[State]):
 
     FIGURE_NAME = "Frozenlake"
     FIGURE_SIZE = (4.0, 4.0)
-    MOVES = jnp.array([[-1, 0], [0, 1], [1, 0], [0, -1]], jnp.int32) #List of actions
+    MOVES = jnp.array([[-1, 0], [0, 1], [0, -1], [1, 0] ], jnp.int32) #List of actions 
+    """Moves= List of actions
+    0= Left
+    1=Right
+    2=Up
+    3=Down
+    """
 
     def __init__(self, grid_size: int=4) -> None:
         """Initialize the Gridworld.
@@ -52,11 +52,11 @@ class Frozenlake(Environment[State]):
         [0 0 0 0]
         [0 0 0 0]
         [0 0 0 0]
-        Initialise terminal states (Holes)
+        Initialise terminal states (Holes=-1 and Goal =1)
         [ 0  0 0  0]
         [ 0 -1 0 -1]
         [ 0  0 0 -1]
-        [-1  0 0  0]
+        [-1  0 0  1]
         """
 
 
@@ -69,16 +69,13 @@ class Frozenlake(Environment[State]):
 
         for i in range (0,grid_size):
              self.grid=self.grid.at[x[i], y[i]].set(-1)
-             
+        self.grid=self.grid.at[grid_size-1, grid_size-1].set(1)    
         self.grid=self.grid
+        
         self.num_rows = grid_size
         self.num_cols = grid_size
         self.grid_shape = (grid_size, grid_size)
         
-
-        # Create viewer used for rendering
-
-        self._animation: Optional[animation.Animation] = None #Clear space
 
     def __repr__(self) -> str:
         """String representation of the environment.
@@ -88,8 +85,16 @@ class Frozenlake(Environment[State]):
         return f"Frozenlake(grid_size={grid_size})"
     
     def reset(self, key:chex.PRNGKey) -> Tuple[State, TimeStep[Observation]]:
+        """Reset the environment to the initial state 
+        Args:
+          key= Random number so each initialisation is unique
+        Returns:
+          state: `State` object corresponding to the new state of the environment.
+          timestep: `TimeStep` object corresponding to the first timestep returned by the
+                   environment.
+        """
+     
         key, elf_key, goal_key= jax.random.split(key, 3)
-        # Elf position and Goal position.
         elf_coordinates = [0,0]
         elf_position = Position(*tuple(elf_coordinates))
         goal_coordinates= [grid_size, grid_size]
@@ -108,6 +113,18 @@ class Frozenlake(Environment[State]):
 
     def step(self, state: State, action: chex.Numeric
              ) -> Tuple[State, TimeStep[Observation]]:
+        """Run one timestep of the environment's dynamics.
+        Args:
+            state: `State` object containing the dynamics of the environment.
+            action: Array containing the action to take:
+                - 0 = Left
+                - 1 = Right
+                - 2 = Up
+                - 3 = Down
+        Returns:
+            state, timestep: next state of the environment and timestep to be observed.
+        """
+             
         is_valid = state.action_mask[action]
         key, goal_key = jax.random.split(state.key, 2)
 
@@ -182,7 +199,7 @@ class Frozenlake(Environment[State]):
         )
 
     def action_spec(self) -> specs.DiscreteArray:
-        """Returns the action spec. 4 actions: [0,1,2,3] -> [Up, Right, Down, Left].
+        """Returns the action spec. 4 actions: [0,1,2,3] -> [Left, Right, Up, Down].
         Returns:
             action_spec: a `specs.DiscreteArray` spec.
         """
@@ -209,7 +226,7 @@ class Frozenlake(Environment[State]):
 
 
     def _get_action_mask( self, elf_position: Position,) -> chex.Array:
-        """Checks whether the episode is over or not.
+        """Checks whether the episode is over or not. Also checks the validity of the action 
         Args:
             Elf_position: Position of the Elf.
         Returns:
@@ -253,15 +270,12 @@ class Frozenlake(Environment[State]):
         """Sample a random action.
         Args:
             Moves: 
-            key: random key to generate a random fruit position.
+            key: random key to generate a random Action
         Returns:
-            Position(row, col) corresponding to the new fruit coordinates.
+            action
         """
-        fruit_index = jax.random.choice(
+        action_index = jax.random.choice(
             key,
-            jnp.arange(self.num_rows * self.num_cols),
-            p=~body.flatten(),
-        )
-        row, col = jnp.divmod(fruit_index, self.num_cols)
+            jnp.int)
         return Position(row=row, col=col)
 

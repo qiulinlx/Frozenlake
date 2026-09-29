@@ -1,177 +1,154 @@
-from typing import Optional, Tuple
 from frtypes import State, Observation, Position
-import chex
-import pygame
 import jax
 import jax.numpy as jnp
-import matplotlib.animation as animation
-from chex import Array, PRNGKey
-import Visual
+from jaxtyping import Array, Bool, Int32
 from jumanji import specs
 from jumanji.env import Environment
-from jumanji.types import TimeStep, restart, termination, transition
-
-from jumanji import register
+from jumanji.types import TimeStep, restart, termination, transition, truncation
 
 
-
-grid_size=4
-# Define some colors
+# Grid rendering constants
 BLACK = (0, 0, 0)
 WHITE = (255, 255, 255)
 BLUE = (137, 207, 240)
 RED = (255, 0, 0)
-DBLUE= (25, 25, 112)
-# This sets the WIDTH and HEIGHT of each grid location
+DBLUE = (25, 25, 112)
+
 WIDTH = 90
 HEIGHT = 90
- 
-# This sets the margin between each cell
 MARGIN = 5
 
-class Frozenlake(Environment[State]):
+class Frozenlake(Environment[State, specs.DiscreteArray, Observation]):
+    """4x4 gridworld environment with a goal and different holes.
+
+    Actions:
+        0 = Up, 1 = Down, 2 = Left, 3 = Right
+    """
 
     FIGURE_NAME = "Frozenlake"
     FIGURE_SIZE = (4.0, 4.0)
-    MOVES = jnp.array([[-1, 0], [0, 1], [0, -1], [1, 0] ], jnp.int32) #List of actions 
-    """Moves= List of actions
-    0= Left
-    1=Right
-    2=Up
-    3=Down
-    """
+    GRID_SIZE = 4
+    MOVES = jnp.array([[-1, 0], [1, 0], [0, -1], [0, 1]], jnp.int32)
 
-    def __init__(self, grid_size: int=4) -> None:
+    def __init__(self, goal_reward: float = 1.0, hole_reward: float = 0.0,
+                 step_reward: float = 0.0, time_limit: int = 100) -> None:
         """Initialize the Gridworld.
+
         Args:
-            grid_size: size of the grid. Defaults to 4.
-            terminal: states where Agent ends episode
-        
-        Reset env to a grid 
-        [0 0 0 0]
-        [0 0 0 0]
-        [0 0 0 0]
-        [0 0 0 0]
-        Initialise terminal states (Holes=-1 and Goal =1)
-        [ 0  0 0  0]
-        [ 0 -1 0 -1]
-        [ 0  0 0 -1]
-        [-1  0 0  1]
+            goal_reward: Reward for reaching the goal. Defaults to 1.
+            hole_reward: Reward for falling into a hole. Defaults to 0.
+            step_reward: Reward for any other step. Defaults to 0.
+            time_limit: Maximum number of steps per episode. Defaults to 100.
         """
-
-
         super().__init__()
-        
-        terminal= jnp.array([[1, grid_size-1],[grid_size-1,0] ,[grid_size-2, grid_size-1], [1, 1], [grid_size-1, grid_size-1]])
-        self.grid = jnp.zeros((grid_size, grid_size), dtype=jnp.int32)
-        x=terminal[..., 0]
-        y=terminal[...,1]
+        self.time_limit = time_limit
 
-        for i in range (0,grid_size):
-             self.grid=self.grid.at[x[i], y[i]].set(-1)
-        self.grid=self.grid.at[grid_size-1, grid_size-1].set(1)    
-        self.grid=self.grid
-        
-        self.num_rows = grid_size
-        self.num_cols = grid_size
-        self.grid_shape = (grid_size, grid_size)
-        
+        self.grid_size = self.GRID_SIZE
+        terminal = jnp.array([
+            [1, 1],
+            [1, self.grid_size - 1],
+            [self.grid_size - 2, self.grid_size - 1],
+            [self.grid_size - 1, 0],
+            [self.grid_size - 1, self.grid_size - 1],
+        ])
+        self.grid = jnp.zeros((self.grid_size, self.grid_size), dtype=jnp.int32)
+        x = terminal[..., 0]
+        y = terminal[..., 1]
+
+        # Mark holes as -1, except the last terminal state which is the goal with +1
+        for i in range(len(terminal) - 1):
+            self.grid = self.grid.at[x[i], y[i]].set(-1)
+        self.grid = self.grid.at[self.grid_size - 1, self.grid_size - 1].set(1)
+
+        self.goal_reward = goal_reward
+        self.hole_reward = hole_reward
+        self.step_reward = step_reward
+        self.num_rows = self.grid_size
+        self.num_cols = self.grid_size
+        self.grid_shape = (self.grid_size, self.grid_size)
+
 
     def __repr__(self) -> str:
-        """String representation of the environment.
-        Returns:
-        str: the string representation of the environment.
-        """
-        return f"Frozenlake(grid_size={grid_size})"
-    
-    def reset(self, key:chex.PRNGKey) -> Tuple[State, TimeStep[Observation]]:
-        """Reset the environment to the initial state 
+        return f"Frozenlake(grid_size={self.grid_size})"
+
+    def reset(self, key: Array) -> tuple[State, TimeStep[Observation]]:
+        """Reset the environment to the initial state.
+
         Args:
-          key= Random number so each initialisation is unique
+            key: Random key for reproducibility.
+
         Returns:
-          state: `State` object corresponding to the new state of the environment.
-          timestep: `TimeStep` object corresponding to the first timestep returned by the
-                   environment.
+            State and initial TimeStep.
         """
-     
-        key, elf_key, goal_key= jax.random.split(key, 3)
-        elf_coordinates = [0,0]
-        elf_position = Position(*tuple(elf_coordinates))
-        goal_coordinates= [grid_size, grid_size]
-        goal_position= Position(*tuple(goal_coordinates))
+        key, _ = jax.random.split(key, 2)
+        elf_position = Position(0, 0)
+        goal_position = Position(self.grid_size - 1, self.grid_size - 1)
 
         state = State(
-            grid= self.grid,
-            key = key,
+            grid=self.grid,
+            key=key,
             elf_position=elf_position,
             goal_position=goal_position,
             step_count=jnp.array(0, jnp.int32),
             action_mask=self._get_action_mask(elf_position),
-            )
+        )
         timestep = restart(observation=self._state_to_observation(state))
         return state, timestep
 
-    def step(self, state: State, action: chex.Numeric
-             ) -> Tuple[State, TimeStep[Observation]]:
+    def step(self, state: State, action: Array) -> tuple[State, TimeStep[Observation]]:
         """Run one timestep of the environment's dynamics.
+
         Args:
-            state: `State` object containing the dynamics of the environment.
-            action: Array containing the action to take:
-                - 0 = Left
-                - 1 = Right
-                - 2 = Up
-                - 3 = Down
+            state: Current state of the environment.
+            action: Action to take (0=Up, 1=Down, 2=Left, 3=Right).
+
         Returns:
-            state, timestep: next state of the environment and timestep to be observed.
+            Next state and timestep.
         """
-             
+        # If the chosen action is invalid, i.e. it leaves the lake, it is a no-op.
         is_valid = state.action_mask[action]
-        key, goal_key = jax.random.split(state.key, 2)
+        move = jnp.where(is_valid, self.MOVES[action], 0)
+        elf_position = self._update_elf_position(state.elf_position, move)
 
-        elf_position = self._update_elf_position(state.elf_position, action)
-
+        # Check whether the episode terminates or is truncated.
         goal_achieved = elf_position == state.goal_position
+        fell_in_hole = state.grid[elf_position.row, elf_position.col] == -1
+        terminated = goal_achieved | fell_in_hole
+        truncated = state.step_count + 1 >= self.time_limit
 
-        done = ~is_valid | goal_achieved |  state.grid[elf_position.row, elf_position.col] != 0
-
-        #done = state.grid[elf_position.row, elf_position.col] == -1
-
-
-        step_count = state.step_count + 1
+        # Build the (updated) state.
+        key, _ = jax.random.split(state.key, 2)
         next_state = State(
-            grid= self.grid,
+            grid=self.grid,
             key=key,
             elf_position=elf_position,
             goal_position=state.goal_position,
             step_count=state.step_count + 1,
             action_mask=self._get_action_mask(elf_position),
         )
-
-
-        
-        reward=1|goal_achieved
-
-
         observation = self._state_to_observation(next_state)
 
+        # Compute the reward.
+        reward = jnp.where(
+            goal_achieved,
+            self.goal_reward,
+            jnp.where(fell_in_hole, self.hole_reward, self.step_reward),
+        ).astype(float)
+
+        # Termination takes precedence over truncation.
         timestep = jax.lax.cond(
-            done,
+            terminated,
             termination,
-            transition,
+            lambda reward, observation: jax.lax.cond(
+                truncated, truncation, transition, reward, observation
+            ),
             reward,
             observation,
         )
         return next_state, timestep
-    
-    
+
     def observation_spec(self) -> specs.Spec[Observation]:
-        """Returns the observation spec.
-        Returns:
-            Spec for the `Observation` whose fields are:
-            - grid: BoundedArray (float) of shape (num_rows, num_cols, 5).
-            - step_count: DiscreteArray (num_values = time_limit) of shape ().
-            - action_mask: BoundedArray (bool) of shape (4,).
-        """
+        """Returns the observation spec."""
         grid = specs.BoundedArray(
             shape=(self.grid_size, self.grid_size, 5),
             minimum=0.0,
@@ -198,25 +175,16 @@ class Frozenlake(Environment[State]):
         )
 
     def action_spec(self) -> specs.DiscreteArray:
-        """Returns the action spec. 4 actions: [0,1,2,3] -> [Left, Right, Up, Down].
-        Returns:
-            action_spec: a `specs.DiscreteArray` spec.
-        """
+        """Returns the action spec (4 discrete actions)."""
         return specs.DiscreteArray(4, name="action")
-    
-    def _state_to_observation(self, state: State) -> Observation:
-        """Maps an environment state to an observation.
-        Args:
-            state: `State` object containing the dynamics of the environment.
-        Returns:
-            The observation derived from the state.
-        """
-        elf = jnp.array(state.elf_position)
-        goal =jnp.array(state.goal_position)
-        grid = grid = jnp.concatenate(
-            jax.tree_util.tree_map(
-                lambda x: x[..., None], [elf, goal]))
 
+    def _state_to_observation(self, state: State) -> Observation:
+        """Convert state to observation."""
+        elf = jnp.array(state.elf_position)
+        goal = jnp.array(state.goal_position)
+        grid = jnp.concatenate(
+            jax.tree_util.tree_map(lambda x: x[..., None], [elf, goal])
+        )
         return Observation(
             grid=grid,
             step_count=state.step_count,
@@ -224,57 +192,36 @@ class Frozenlake(Environment[State]):
         )
 
 
-    def _get_action_mask( self, elf_position: Position,) -> chex.Array:
-        """Checks whether the episode is over or not. Also checks the validity of the action 
-        Args:
-            Elf_position: Position of the Elf.
-        Returns:
-            action_mask: array (bool) of shape (4,).
-        """
+    def _get_action_mask(self, elf_position: Position) -> Bool[Array, "4"]:
+        """Get boolean mask of valid actions from current position."""
 
-        def is_valid(move: chex.Array) -> chex.Array:
-            new_elf_position = elf_position + Position(*tuple(move))
-            outside_board = (
-                (new_elf_position.row < 0)
-                | (new_elf_position.row >= grid_size)
-                | (new_elf_position.col < 0)
-                | (new_elf_position.col >= grid_size)
+        def is_valid(move: Int32[Array, "2"]) -> Bool[Array, ""]:
+            new_pos = elf_position + Position(*tuple(move))
+            outside = (
+                (new_pos.row < 0)
+                | (new_pos.row >= self.grid_size)
+                | (new_pos.col < 0)
+                | (new_pos.col >= self.grid_size)
             )
-            return ~outside_board
+            return ~outside
 
-        action_mask = jax.vmap(is_valid)(self.MOVES)
-        return action_mask
+        return jax.vmap(is_valid)(self.MOVES)
 
-    def _update_elf_position(
-        self, elf_position: Position, action: chex.Numeric
-    ) -> Position:
-        """Give the new elf position after taking an action.
+    def _update_elf_position(self, elf_position: Position, move: Array) -> Position:
+        """Compute new elf position after taking a moven."""
+        return Position(
+            row=elf_position.row + move[0],
+            col=elf_position.col + move[1],
+        )
+
+    def action_space_sample(self, key: Array) -> Int32[Array, ""]:
+        """Sample a random action uniformly from valid actions.
+
         Args:
-            elf_position: `Position` of the elf.
-            action: integer that tells in which direction to go.
+            key: Random key for sampling.
+
         Returns:
-            New elf position after taking the action.
+            Action index (0-3).
         """
-        # Possible moves are: Up, Right, Down, Left.
-        row_move, col_move = self.MOVES[action]
-        move_position = Position(row=row_move, col=col_move)
-        next_elf_position = Position(*tuple(elf_position)) + move_position
-        return next_elf_position
-    
-    def action_space_sample(
-        self,
-        body: chex.Array,
-        key: chex.PRNGKey,
-    ) -> Position:
-        """Sample a random action.
-        Args:
-            Moves: 
-            key: random key to generate a random Action
-        Returns:
-            action
-        """
-        action_index = jax.random.choice(
-            key,
-            jnp.int)
-        return Position(row=row, col=col)
+        return jax.random.randint(key, (), 0, self.action_spec().num_values)
 

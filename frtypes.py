@@ -25,12 +25,12 @@ class Position(NamedTuple):
         if not isinstance(other, Position):
             return NotImplemented
         return Position(row=self.row + other.row, col=self.col + other.col)
-    
+
 class Actions(IntEnum):
     UP: int = 0
-    RIGHT: int = 1
-    DOWN: int = 2
-    LEFT: int = 3
+    DOWN: int = 1
+    LEFT: int = 2
+    RIGHT: int = 3
 
 @dataclass
 class State:
@@ -50,7 +50,7 @@ class State:
     goal_position: Position
     elf_position: Position
     key: chex.PRNGKey
-  
+
 
 class Observation(NamedTuple):
     """

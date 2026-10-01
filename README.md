@@ -10,7 +10,12 @@ The Frozen Lake environment is a playground for people to learn about RL algorit
 
 
 The Dark blue squares represent terminal states or equivalently holes, and the red squares represent the location of the gift (aka reward). All blocks that aren't light blue will have terminal states.    
-                                                                                                                                         
+## Installation
+```bash
+git clone https://github.com/riberaborrell/Frozenlake
+pip install -e Frozenlake
+```
+                                                                                                             
 ## Quickstart
 **TLDR: See the testing.py file**  
                                                                                                                                          

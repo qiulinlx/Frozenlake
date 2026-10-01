@@ -3,9 +3,10 @@ from dataclasses import dataclass
 
 import tyro
 import jax
+import jumanji
 
-import Gridworld
-from Viewer import FrozenLakeViewer
+from frozenlake.env import FrozenLake
+from frozenlake.viewer import FrozenLakeViewer
 
 @dataclass
 class Args:
@@ -23,7 +24,8 @@ def main() -> None:
     args = tyro.cli(Args)
 
     # create Frozen Lake environment and jit the corresponding reset and step functions
-    env = Gridworld.Frozenlake()
+    #env = jumanji.make("FrozenLake-v0")
+    env = FrozenLake()
     reset_fn, step_fn = jax.jit(env.reset), jax.jit(env.step)
 
     # reset environment

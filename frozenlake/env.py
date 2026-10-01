@@ -1,4 +1,3 @@
-from frtypes import State, Observation, Position
 import jax
 import jax.numpy as jnp
 from jaxtyping import Array, Bool, Int32
@@ -6,6 +5,7 @@ from jumanji import specs
 from jumanji.env import Environment
 from jumanji.types import TimeStep, restart, termination, transition, truncation
 
+from frozenlake.types import State, Observation, Position
 
 # Grid rendering constants
 BLACK = (0, 0, 0)
@@ -18,7 +18,7 @@ WIDTH = 90
 HEIGHT = 90
 MARGIN = 5
 
-class Frozenlake(Environment[State, specs.DiscreteArray, Observation]):
+class FrozenLake(Environment[State, specs.DiscreteArray, Observation]):
     """4x4 gridworld environment with a goal and different holes.
 
     Actions:

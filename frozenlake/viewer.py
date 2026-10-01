@@ -9,9 +9,10 @@ from matplotlib.artist import Artist
 from matplotlib.axes import Axes
 from numpy.typing import NDArray
 
-from frtypes import State
+from frozenlake.types import State
 
-ELF_IMAGE = resources.files("img") / "elf.png"
+#ELF_IMAGE = resources.files("img") / "elf.png"
+ELF_IMAGE = resources.files("frozenlake") / "img" / "elf.png"
 
 
 class FrozenLakeViewer(MatplotlibViewer[State]):

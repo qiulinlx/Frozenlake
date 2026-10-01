@@ -51,6 +51,12 @@ class State:
     elf_position: Position
     key: chex.PRNGKey
 
+    # Read-only aliases so that Viewer can draw this state like the `frozenlake` package state.
+    @property
+    def holes(self) -> chex.Array:
+        """Boolean (num_rows, num_cols) array, `True` where the grid has a hole (-1)."""
+        return self.grid == -1
+
 
 class Observation(NamedTuple):
     """

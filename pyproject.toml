@@ -29,4 +29,10 @@ dev = [
 Homepage = "https://github.com/riberaborrell/Frozenlake"
 
 [tool.setuptools]
-py-modules = ["registry", "Gridworld", "Visual", "frtypes", "testing"]
+py-modules = ["registry", "Gridworld", "Viewer", "frtypes", "testing"]
+# `img` is a top-level package so that Viewer can load elf.png with importlib.resources
+packages = ["img"]
+
+
+[tool.setuptools.package-data]
+img = ["*.png"]

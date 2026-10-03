@@ -1,0 +1,27 @@
+# python compilation files
+__pycache__/
+*.pyc
+
+# egg info files
+*.egg-info/
+
+# build files
+build/
+dist/
+
+# test and lint caches
+.pytest_cache/
+.ruff_cache/
+
+# virtual environments
+venv/
+.venv/
+
+# vim swap files
+*.swp
+
+# macOS
+.DS_Store
+
+# output data folder
+data

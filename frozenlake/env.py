@@ -22,13 +22,13 @@ class FrozenLake(Environment[State, specs.DiscreteArray, Observation]):
     """4x4 gridworld environment with a goal and different holes.
 
     Actions:
-        0 = Up, 1 = Down, 2 = Left, 3 = Right
+        0 = Left, 1 = Down, 2 = Right, 3 = Up
     """
 
     FIGURE_NAME = "Frozenlake"
     FIGURE_SIZE = (4.0, 4.0)
     GRID_SIZE = 4
-    MOVES = jnp.array([[-1, 0], [1, 0], [0, -1], [0, 1]], jnp.int32)
+    MOVES = jnp.array([[0, -1], [1, 0], [0, 1], [-1, 0]], jnp.int32)
 
     def __init__(self, goal_reward: float = 1.0, hole_reward: float = 0.0,
                  step_reward: float = 0.0, time_limit: int = 100) -> None:
@@ -81,16 +81,16 @@ class FrozenLake(Environment[State, specs.DiscreteArray, Observation]):
             State and initial TimeStep.
         """
         key, _ = jax.random.split(key, 2)
-        elf_position = Position(0, 0)
+        player_position = Position(0, 0)
         goal_position = Position(self.grid_size - 1, self.grid_size - 1)
 
         state = State(
             grid=self.grid,
             key=key,
-            elf_position=elf_position,
+            player_position=player_position,
             goal_position=goal_position,
             step_count=jnp.array(0, jnp.int32),
-            action_mask=self._get_action_mask(elf_position),
+            action_mask=self._get_action_mask(player_position),
         )
         timestep = restart(observation=self._state_to_observation(state))
         return state, timestep
@@ -100,7 +100,7 @@ class FrozenLake(Environment[State, specs.DiscreteArray, Observation]):
 
         Args:
             state: Current state of the environment.
-            action: Action to take (0=Up, 1=Down, 2=Left, 3=Right).
+            action: Action to take (0=Left, 1=Down, 2=Right, 3=Up).
 
         Returns:
             Next state and timestep.
@@ -108,11 +108,11 @@ class FrozenLake(Environment[State, specs.DiscreteArray, Observation]):
         # If the chosen action is invalid, i.e. it leaves the lake, it is a no-op.
         is_valid = state.action_mask[action]
         move = jnp.where(is_valid, self.MOVES[action], 0)
-        elf_position = self._update_elf_position(state.elf_position, move)
+        player_position = self._update_player_position(state.player_position, move)
 
         # Check whether the episode terminates or is truncated.
-        goal_achieved = elf_position == state.goal_position
-        fell_in_hole = state.grid[elf_position.row, elf_position.col] == -1
+        goal_achieved = player_position == state.goal_position
+        fell_in_hole = state.grid[player_position.row, player_position.col] == -1
         terminated = goal_achieved | fell_in_hole
         truncated = state.step_count + 1 >= self.time_limit
 
@@ -121,10 +121,10 @@ class FrozenLake(Environment[State, specs.DiscreteArray, Observation]):
         next_state = State(
             grid=self.grid,
             key=key,
-            elf_position=elf_position,
+            player_position=player_position,
             goal_position=state.goal_position,
             step_count=state.step_count + 1,
-            action_mask=self._get_action_mask(elf_position),
+            action_mask=self._get_action_mask(player_position),
         )
         observation = self._state_to_observation(next_state)
 
@@ -180,10 +180,10 @@ class FrozenLake(Environment[State, specs.DiscreteArray, Observation]):
 
     def _state_to_observation(self, state: State) -> Observation:
         """Convert state to observation."""
-        elf = jnp.array(state.elf_position)
+        pos = jnp.array(state.player_position)
         goal = jnp.array(state.goal_position)
         grid = jnp.concatenate(
-            jax.tree_util.tree_map(lambda x: x[..., None], [elf, goal])
+            jax.tree_util.tree_map(lambda x: x[..., None], [pos, goal])
         )
         return Observation(
             grid=grid,
@@ -192,11 +192,11 @@ class FrozenLake(Environment[State, specs.DiscreteArray, Observation]):
         )
 
 
-    def _get_action_mask(self, elf_position: Position) -> Bool[Array, "4"]:
+    def _get_action_mask(self, player_position: Position) -> Bool[Array, "4"]:
         """Get boolean mask of valid actions from current position."""
 
         def is_valid(move: Int32[Array, "2"]) -> Bool[Array, ""]:
-            new_pos = elf_position + Position(*tuple(move))
+            new_pos = player_position + Position(*tuple(move))
             outside = (
                 (new_pos.row < 0)
                 | (new_pos.row >= self.grid_size)
@@ -207,11 +207,11 @@ class FrozenLake(Environment[State, specs.DiscreteArray, Observation]):
 
         return jax.vmap(is_valid)(self.MOVES)
 
-    def _update_elf_position(self, elf_position: Position, move: Array) -> Position:
-        """Compute new elf position after taking a moven."""
+    def _update_player_position(self, player_position: Position, move: Array) -> Position:
+        """Compute new player position after taking a moven."""
         return Position(
-            row=elf_position.row + move[0],
-            col=elf_position.col + move[1],
+            row=player_position.row + move[0],
+            col=player_position.col + move[1],
         )
 
     def action_space_sample(self, key: Array) -> Int32[Array, ""]:

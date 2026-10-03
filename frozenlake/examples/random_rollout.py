@@ -24,7 +24,6 @@ def main() -> None:
     args = tyro.cli(Args)
 
     # create Frozen Lake environment and jit the corresponding reset and step functions
-    #env = jumanji.make("FrozenLake-v0")
     env = FrozenLake()
     reset_fn, step_fn = jax.jit(env.reset), jax.jit(env.step)
 
@@ -47,8 +46,8 @@ def main() -> None:
     print(f"episode length: {len(states) - 1}, final reward: {timestep.reward}")
 
     if args.render:
-        v = FrozenLakeViewer("Frozen Lake")
-        v.animate(states, interval=500, save_path="data/random_rollout.gif")
+        viewer = FrozenLakeViewer("Frozen Lake")
+        viewer.animate(states, interval=500, save_path="data/random_rollout.gif")
 
 
 if __name__ == "__main__":

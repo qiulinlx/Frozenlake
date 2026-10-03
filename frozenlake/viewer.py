@@ -11,7 +11,6 @@ from numpy.typing import NDArray
 
 from frozenlake.types import State
 
-#ELF_IMAGE = resources.files("img") / "elf.png"
 ELF_IMAGE = resources.files("frozenlake") / "img" / "elf.png"
 
 
@@ -110,7 +109,7 @@ class FrozenLakeViewer(MatplotlibViewer[State]):
         ax.vlines(np.arange(num_cols + 1) - 0.5, -0.5, num_rows - 0.5, color="black", linewidth=2)
 
         # Agent
-        row, col = int(state.elf_position.row), int(state.elf_position.col)
+        row, col = int(state.player_position.row), int(state.player_position.col)
         ax.imshow(self._elf_image, extent=(col - 0.4, col + 0.4, row + 0.4, row - 0.4), zorder=2)
 
         ax.set_xlim(-0.5, num_cols - 0.5)

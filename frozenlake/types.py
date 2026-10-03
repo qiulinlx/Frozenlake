@@ -27,10 +27,10 @@ class Position(NamedTuple):
         return Position(row=self.row + other.row, col=self.col + other.col)
 
 class Actions(IntEnum):
-    UP: int = 0
+    LEFT: int = 0
     DOWN: int = 1
-    LEFT: int = 2
-    RIGHT: int = 3
+    RIGHT: int = 2
+    UP: int = 3
 
 @dataclass
 class State:
@@ -42,13 +42,13 @@ class State:
     directions to move in.
     states on board, is of length num_terminals
     goal: Position of reward
-    elf: position of agent
+    player_position: position of agent
     """
     grid: Gridworld
     step_count: chex.Numeric  # ()
     action_mask: chex.Array  # (4,)
     goal_position: Position
-    elf_position: Position
+    player_position: Position
     key: chex.PRNGKey
 
     # Read-only aliases so that Viewer can draw this state like the `frozenlake` package state.
@@ -60,7 +60,7 @@ class State:
 
 class Observation(NamedTuple):
     """
-    grid: feature maps that include information about the goal, the elf.
+    grid: feature maps that include information about the goal and the player position.
     step_count: current number of steps in the episode.
     action_mask: array specifying which directions the agent can move in from its current position.
     """

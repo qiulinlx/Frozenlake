@@ -7,26 +7,13 @@ from jumanji.types import TimeStep, restart, termination, transition, truncation
 
 from frozenlake.types import State, Observation, Position
 
-# Grid rendering constants
-BLACK = (0, 0, 0)
-WHITE = (255, 255, 255)
-BLUE = (137, 207, 240)
-RED = (255, 0, 0)
-DBLUE = (25, 25, 112)
-
-WIDTH = 90
-HEIGHT = 90
-MARGIN = 5
-
 class FrozenLake(Environment[State, specs.DiscreteArray, Observation]):
     """4x4 gridworld environment with a goal and different holes.
 
     Actions:
-        0 = Left, 1 = Down, 2 = Right, 3 = Up
+        0 = Move left, 1 = Move down, 2 = Move right, 3 = Move up
     """
 
-    FIGURE_NAME = "Frozenlake"
-    FIGURE_SIZE = (4.0, 4.0)
     GRID_SIZE = 4
     MOVES = jnp.array([[0, -1], [1, 0], [0, 1], [-1, 0]], jnp.int32)
 
@@ -69,7 +56,7 @@ class FrozenLake(Environment[State, specs.DiscreteArray, Observation]):
 
 
     def __repr__(self) -> str:
-        return f"Frozenlake(grid_size={self.grid_size})"
+        return f"FrozenLake(grid_size={self.grid_size})"
 
     def reset(self, key: Array) -> tuple[State, TimeStep[Observation]]:
         """Reset the environment to the initial state.
@@ -215,7 +202,7 @@ class FrozenLake(Environment[State, specs.DiscreteArray, Observation]):
         )
 
     def action_space_sample(self, key: Array) -> Int32[Array, ""]:
-        """Sample a random action uniformly from valid actions.
+        """Sample a random action uniformly all four actions.
 
         Args:
             key: Random key for sampling.

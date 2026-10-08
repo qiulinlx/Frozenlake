@@ -11,17 +11,27 @@ from numpy.typing import NDArray
 
 from frozenlake.types import State
 
+# Grid rendering constants
+LIGHT_BLUE = [137 / 255, 207 / 255, 240 / 255]
+RED = [1, 0, 0]
+DARK_BLUE = [25 / 255, 25 / 255, 112 / 255]
+
+# Images for rendering
 ELF_IMAGE = resources.files("frozenlake") / "img" / "elf.png"
 
-
 class FrozenLakeViewer(MatplotlibViewer[State]):
+
+    FIGURE_NAME = "Frozenlake"
+    FIGURE_SIZE = (4.0, 4.0)
+
     FROZEN = 0
     HOLE = 1
     GOAL = 2
+
     COLORS: ClassVar = {
-        FROZEN: [137 / 255, 207 / 255, 240 / 255],  # Light blue
-        HOLE: [25 / 255, 25 / 255, 112 / 255],  # Dark blue
-        GOAL: [1, 0, 0],  # Red
+        FROZEN: LIGHT_BLUE,
+        HOLE: DARK_BLUE,
+        GOAL: RED,
     }
 
     def __init__(self, name: str, render_mode: str = "human") -> None:

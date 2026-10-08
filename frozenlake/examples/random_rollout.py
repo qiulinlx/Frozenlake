@@ -14,6 +14,8 @@ class Args:
 
     seed: int = 1
     """seed of the experiment"""
+    max_episode_steps: int = 100
+    """the number of steps after which an episode is truncated"""
     render: bool = False
     """if toggled, save the animation of the simulated episode as a gif"""
 
@@ -24,7 +26,7 @@ def main() -> None:
     args = tyro.cli(Args)
 
     # create Frozen Lake environment and jit the corresponding reset and step functions
-    env = FrozenLake()
+    env = FrozenLake(time_limit=args.max_episode_steps)
     reset_fn, step_fn = jax.jit(env.reset), jax.jit(env.step)
 
     # reset environment

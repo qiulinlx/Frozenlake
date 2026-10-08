@@ -1,4 +1,3 @@
-
 from enum import IntEnum
 from typing import TYPE_CHECKING, NamedTuple
 
@@ -17,11 +16,27 @@ class Position(NamedTuple):
     col: chex.Array
 
     def __eq__(self, other: "Position") -> chex.Array:  # type: ignore[override]
+        """Check whether two positions coincide.
+
+        Args:
+            other: Position to compare with.
+
+        Returns:
+            `True` where both the row and the column match.
+        """
         if not isinstance(other, Position):
             return NotImplemented
         return (self.row == other.row) & (self.col == other.col)
 
     def __add__(self, other: "Position") -> "Position":  # type: ignore[override]
+        """Add two positions component-wise.
+
+        Args:
+            other: Position (or move) to add.
+
+        Returns:
+            Position with the rows and the columns added.
+        """
         if not isinstance(other, Position):
             return NotImplemented
         return Position(row=self.row + other.row, col=self.col + other.col)
@@ -35,12 +50,10 @@ class Actions(IntEnum):
 @dataclass
 class State:
     """
-    grid: the grid, each nonzero element in the array corresponds
-    to a game tile.
+    grid: the grid, each nonzero element in the array corresponds to a game tile.
     step_count: the number of steps taken so far.
     action_mask: array of booleans that indicate the feasible actions, i.e. valid
-    directions to move in.
-    states on board, is of length num_terminals
+                 directions to move in.
     goal: Position of reward
     player_position: position of agent
     """

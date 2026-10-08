@@ -38,7 +38,7 @@ Now we can begin coding up the Frozen Lake environment easily. The environment a
 ```python
 from frozenlake.env import FrozenLake
 
-env = Frozenlake()
+env = FrozenLake()
 key = jax.random.PRNGKey(1)
 state, timestep = env.reset(key)
 ```

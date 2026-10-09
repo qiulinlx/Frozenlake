@@ -1,4 +1,3 @@
-
 from enum import IntEnum
 from typing import TYPE_CHECKING, NamedTuple
 
@@ -17,44 +16,64 @@ class Position(NamedTuple):
     col: chex.Array
 
     def __eq__(self, other: "Position") -> chex.Array:  # type: ignore[override]
+        """Check whether two positions coincide.
+
+        Args:
+            other: Position to compare with.
+
+        Returns:
+            `True` where both the row and the column match.
+        """
         if not isinstance(other, Position):
             return NotImplemented
         return (self.row == other.row) & (self.col == other.col)
 
     def __add__(self, other: "Position") -> "Position":  # type: ignore[override]
+        """Add two positions component-wise.
+
+        Args:
+            other: Position (or move) to add.
+
+        Returns:
+            Position with the rows and the columns added.
+        """
         if not isinstance(other, Position):
             return NotImplemented
         return Position(row=self.row + other.row, col=self.col + other.col)
-    
+
 class Actions(IntEnum):
-    UP: int = 0
-    RIGHT: int = 1
-    DOWN: int = 2
-    LEFT: int = 3
+    LEFT: int = 0
+    DOWN: int = 1
+    RIGHT: int = 2
+    UP: int = 3
 
 @dataclass
 class State:
     """
-    grid: the grid, each nonzero element in the array corresponds
-    to a game tile.
+    grid: the grid, each nonzero element in the array corresponds to a game tile.
     step_count: the number of steps taken so far.
     action_mask: array of booleans that indicate the feasible actions, i.e. valid
-    directions to move in.
-    states on board, is of length num_terminals
+                 directions to move in.
     goal: Position of reward
-    elf: position of agent
+    player_position: position of agent
     """
     grid: Gridworld
     step_count: chex.Numeric  # ()
     action_mask: chex.Array  # (4,)
     goal_position: Position
-    elf_position: Position
+    player_position: Position
     key: chex.PRNGKey
-  
+
+    # Read-only aliases so that Viewer can draw this state like the `frozenlake` package state.
+    @property
+    def holes(self) -> chex.Array:
+        """Boolean (num_rows, num_cols) array, `True` where the grid has a hole (-1)."""
+        return self.grid == -1
+
 
 class Observation(NamedTuple):
     """
-    grid: feature maps that include information about the goal, the elf.
+    grid: feature maps that include information about the goal and the player position.
     step_count: current number of steps in the episode.
     action_mask: array specifying which directions the agent can move in from its current position.
     """
